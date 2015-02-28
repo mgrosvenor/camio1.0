@@ -7,4 +7,4 @@ To build it, you must have the "cake" build system installed. You can obtain cak
 
 To insall cake, follow the instructions in "INSTALL". 
 
-
+To build camio, run "build.sh" in the root directory. 
