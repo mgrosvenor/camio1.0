@@ -459,7 +459,7 @@ done:
 
 
 void camio_ostream_netmap_flush(camio_ostream_t* this){
-    camio_ostream_netmap_t* priv = this->priv;
+    //camio_ostream_netmap_t* priv = this->priv;
 
      //printf("Flushing...\n");
      /* flush any remaining packets */

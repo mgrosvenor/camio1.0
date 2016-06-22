@@ -110,7 +110,7 @@ static int64_t read_to_buff(camio_istream_log_t* priv, uint8_t* new_data_ptr, in
 }
 
 
-inline int ascii_hex_to_int(uint8_t a){
+int ascii_hex_to_int(uint8_t a){
     switch(a){
         case '0': return 0x0;
         case '1': return 0x1;
@@ -237,7 +237,7 @@ static int64_t prepare_next(camio_istream_log_t* priv, int blocking){
 
 }
 
-int camio_istream_log_ready(camio_istream_t* this){
+int64_t camio_istream_log_ready(camio_istream_t* this){
     camio_istream_log_t* priv = this->priv;
     if(priv->read_size || priv->is_closed){
         return 1;
@@ -248,7 +248,7 @@ int camio_istream_log_ready(camio_istream_t* this){
     return priv->read_size || priv->is_closed;
 }
 
-int camio_istream_log_start_read(camio_istream_t* this, uint8_t** out){
+int64_t camio_istream_log_start_read(camio_istream_t* this, uint8_t** out){
     *out = NULL;
 
     camio_istream_log_t* priv = this->priv;
@@ -274,7 +274,7 @@ int camio_istream_log_start_read(camio_istream_t* this, uint8_t** out){
 }
 
 
-int camio_istream_log_end_read(camio_istream_t* this, uint8_t* free_buff){
+int64_t camio_istream_log_end_read(camio_istream_t* this, uint8_t* free_buff){
     return 0; //Always true for file I/O
 }
 

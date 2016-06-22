@@ -31,7 +31,7 @@ static inline uint64_t timespec_to_ns(struct timespec* ts){
 //}
 
 
-int camio_istream_periodic_timeout_fast_open(camio_istream_t* this, const camio_descr_t* opts ){
+int64_t camio_istream_periodic_timeout_fast_open(camio_istream_t* this, const camio_descr_t* opts ){
     camio_istream_periodic_timeout_fast_t* priv = this->priv;
 
 
@@ -100,7 +100,7 @@ static int prepare_next(camio_istream_periodic_timeout_fast_t* priv){
     return 0;
 }
 
-int camio_istream_periodic_timeout_fast_ready(camio_istream_t* this){
+int64_t camio_istream_periodic_timeout_fast_ready(camio_istream_t* this){
     camio_istream_periodic_timeout_fast_t* priv = this->priv;
     if(priv->is_ready || priv->is_closed){
         return 1;
@@ -109,7 +109,7 @@ int camio_istream_periodic_timeout_fast_ready(camio_istream_t* this){
     return prepare_next(priv);
 }
 
-int camio_istream_periodic_timeout_fast_start_read(camio_istream_t* this, uint8_t** out){
+int64_t camio_istream_periodic_timeout_fast_start_read(camio_istream_t* this, uint8_t** out){
     camio_istream_periodic_timeout_fast_t* priv = this->priv;
     if(unlikely(priv->is_closed == 1)){
         return 0;
@@ -127,7 +127,7 @@ int camio_istream_periodic_timeout_fast_start_read(camio_istream_t* this, uint8_
 }
 
 
-int camio_istream_periodic_timeout_fast_end_read(camio_istream_t* this, uint8_t* free_buff){
+int64_t camio_istream_periodic_timeout_fast_end_read(camio_istream_t* this, uint8_t* free_buff){
     camio_istream_periodic_timeout_fast_t* priv = this->priv;
     priv->is_ready = 0;
     return 0;

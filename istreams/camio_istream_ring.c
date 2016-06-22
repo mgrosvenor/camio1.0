@@ -11,6 +11,7 @@
 #include <fcntl.h>
 #include <sys/mman.h>
 #include <memory.h>
+#include <stdint.h>
 
 #include "camio_istream_ring.h"
 #include "../camio_errors.h"
@@ -21,7 +22,7 @@
 #define CAMIO_ISTREAM_RING_SIZE (4 * 1024 * 1024) //4MB
 #define CAMIO_ISTREAM_RING_SLOT_SIZE (4 * 1024)  //4K
 
-int camio_istream_ring_open(camio_istream_t* this, const camio_descr_t* descr ){
+int64_t camio_istream_ring_open(camio_istream_t* this, const camio_descr_t* descr ){
     camio_istream_ring_t* priv = this->priv;
     int ring_fd = -1;
     volatile uint8_t* ring = NULL;
@@ -112,7 +113,7 @@ static int prepare_next(camio_istream_ring_t* priv){
     return 0;
 }
 
-int camio_istream_ring_ready(camio_istream_t* this){
+int64_t camio_istream_ring_ready(camio_istream_t* this){
     camio_istream_ring_t* priv = this->priv;
     if(priv->read_size || priv->is_closed){
         return 1;
@@ -121,7 +122,7 @@ int camio_istream_ring_ready(camio_istream_t* this){
     return prepare_next(priv);
 }
 
-int camio_istream_ring_start_read(camio_istream_t* this, uint8_t** out){
+int64_t camio_istream_ring_start_read(camio_istream_t* this, uint8_t** out){
     camio_istream_ring_t* priv = this->priv;
     *out = NULL;
 
@@ -132,7 +133,7 @@ int camio_istream_ring_start_read(camio_istream_t* this, uint8_t** out){
     //Called read without calling ready, they must want to block/spin waiting for data
     if(unlikely(!priv->read_size)){
         while(!prepare_next(priv)){
-            asm("pause"); //Tell the CPU we're spinning
+            __asm__ __volatile__("pause"); //Tell the CPU we're spinning
         }
     }
 
@@ -142,7 +143,7 @@ int camio_istream_ring_start_read(camio_istream_t* this, uint8_t** out){
 }
 
 
-int camio_istream_ring_end_read(camio_istream_t* this, uint8_t* free_buff){
+int64_t camio_istream_ring_end_read(camio_istream_t* this, uint8_t* free_buff){
     camio_istream_ring_t* priv = this->priv;
 
     register uint64_t curr_sync_count = *((volatile uint64_t*)(priv->curr + CAMIO_ISTREAM_RING_SLOT_SIZE - sizeof(uint64_t)));

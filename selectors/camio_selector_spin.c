@@ -22,22 +22,22 @@
         (t) = rdtsc();                  \
     } while (0)
 
-static __inline void
-do_cpuid(u_int ax, u_int *p)
-{
-    __asm __volatile("cpuid"
-             : "=a" (p[0]), "=b" (p[1]), "=c" (p[2]), "=d" (p[3])
-             :  "0" (ax));
-}
-
-static __inline uint64_t
-rdtsc(void)
-{
-    uint64_t rv;
-
-    __asm __volatile("rdtsc" : "=A" (rv));
-    return (rv);
-}
+//static __inline void
+//do_cpuid(u_int ax, u_int *p)
+//{
+//    __asm __volatile("cpuid"
+//             : "=a" (p[0]), "=b" (p[1]), "=c" (p[2]), "=d" (p[3])
+//             :  "0" (ax));
+//}
+//
+//static __inline uint64_t
+//rdtsc(void)
+//{
+//    uint64_t rv;
+//
+//    __asm __volatile("rdtsc" : "=A" (rv));
+//    return (rv);
+//}
 
 
 int camio_selector_spin_init(camio_selector_t* this){

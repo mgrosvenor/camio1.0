@@ -23,7 +23,7 @@
 
 
 
-int camio_istream_raw_open(camio_istream_t* this, const camio_descr_t* descr ){
+int64_t camio_istream_raw_open(camio_istream_t* this, const camio_descr_t* descr ){
     camio_istream_raw_t* priv = this->priv;
     const char* iface = descr->query;
     int raw_sock_fd;
@@ -133,7 +133,7 @@ static int prepare_next(camio_istream_raw_t* priv, int blocking){
 
 }
 
-int camio_istream_raw_ready(camio_istream_t* this){
+int64_t camio_istream_raw_ready(camio_istream_t* this){
     camio_istream_raw_t* priv = this->priv;
     if(priv->bytes_read || priv->is_closed){
         return 1;
@@ -143,7 +143,7 @@ int camio_istream_raw_ready(camio_istream_t* this){
 }
 
 
-static int camio_istream_raw_start_read(camio_istream_t* this, uint8_t** out){
+static int64_t camio_istream_raw_start_read(camio_istream_t* this, uint8_t** out){
     *out = NULL;
 
     camio_istream_raw_t* priv = this->priv;
@@ -166,7 +166,7 @@ static int camio_istream_raw_start_read(camio_istream_t* this, uint8_t** out){
 }
 
 
-int camio_istream_raw_end_read(camio_istream_t* this, uint8_t* free_buff){
+int64_t camio_istream_raw_end_read(camio_istream_t* this, uint8_t* free_buff){
     return 0; //Always true for socket I/O
 }
 

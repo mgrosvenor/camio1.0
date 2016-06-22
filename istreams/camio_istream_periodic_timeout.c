@@ -15,7 +15,7 @@
 #include "../camio_errors.h"
 
 
-int camio_istream_periodic_timeout_open(camio_istream_t* this, const camio_descr_t* opts ){
+int64_t camio_istream_periodic_timeout_open(camio_istream_t* this, const camio_descr_t* opts ){
     camio_istream_periodic_timeout_t* priv = this->priv;
     uint64_t seconds = 0;
     uint64_t nanoseconds = 0;
@@ -124,7 +124,7 @@ static int prepare_next(camio_istream_periodic_timeout_t* priv, int blocking){
     return bytes;
 }
 
-int camio_istream_periodic_timeout_ready(camio_istream_t* this){
+int64_t camio_istream_periodic_timeout_ready(camio_istream_t* this){
     camio_istream_periodic_timeout_t* priv = this->priv;
     if(priv->read_size || priv->is_closed){
         return 1;
@@ -133,7 +133,7 @@ int camio_istream_periodic_timeout_ready(camio_istream_t* this){
     return prepare_next(priv,CAMIO_ISTREAM_PERIODIC_TIMEOUT_NONBLOCKING);
 }
 
-int camio_istream_periodic_timeout_start_read(camio_istream_t* this, uint8_t** out){
+int64_t camio_istream_periodic_timeout_start_read(camio_istream_t* this, uint8_t** out){
     *out = NULL;
 
     camio_istream_periodic_timeout_t* priv = this->priv;
@@ -156,7 +156,7 @@ int camio_istream_periodic_timeout_start_read(camio_istream_t* this, uint8_t** o
 }
 
 
-int camio_istream_periodic_timeout_end_read(camio_istream_t* this, uint8_t* free_buff){
+int64_t camio_istream_periodic_timeout_end_read(camio_istream_t* this, uint8_t* free_buff){
     return 0;
 }
 

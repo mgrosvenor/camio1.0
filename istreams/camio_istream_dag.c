@@ -124,7 +124,7 @@ int64_t camio_istream_dag_start_read(camio_istream_t* this, uint8_t** out){
     //Called read without calling ready, they must want to block/spin waiting for data
     if(unlikely(!priv->data_size)){
         while(!prepare_next(this)){
-            asm("pause"); //Tell the CPU we're spinning
+            __asm__ __volatile__("pause"); //Tell the CPU we're spinning
         }
     }
 

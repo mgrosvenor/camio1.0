@@ -170,7 +170,7 @@ __int64 rdtscll()
 /* x86 Implementation */
 #   define rdtscll(val) do { \
       unsigned int __a,__d; \
-      asm volatile("rdtsc" : "=a" (__a), "=d" (__d)); \
+      __asm__ __volatile__("rdtsc" : "=a" (__a), "=d" (__d)); \
       (val) = ((unsigned long)__a) | (((unsigned long)__d)<<32); \
       } while(0)
 #  endif 
@@ -1255,7 +1255,7 @@ dagutil_steerstatus(int dagfd, volatile uint8_t* dagiom, uint32_t base, int ver)
 void
 dagutil_pbmstatus(int dagfd, volatile uint8_t* dagiom, uint32_t pbm_base, daginf_t* daginf, int pbm_ver)
 {
-	uint32_t val, rxstreams, txstreams;
+	int32_t val, rxstreams, txstreams;
 	int c, size;
 
 	if (pbm_base)

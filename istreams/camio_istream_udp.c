@@ -24,7 +24,7 @@
 
 
 
-int camio_istream_udp_open(camio_istream_t* this, const camio_descr_t* descr ){
+int64_t camio_istream_udp_open(camio_istream_t* this, const camio_descr_t* descr ){
     camio_istream_udp_t* priv = this->priv;
     char ip_addr[17]; //IP addr is worst case, 16 bytes long (255.255.255.255)
     char udp_port[6]; //UDP port is wost case, 5 bytes long (65536)
@@ -141,7 +141,7 @@ static int prepare_next(camio_istream_udp_t* priv, int blocking){
 
 }
 
-int camio_istream_udp_ready(camio_istream_t* this){
+int64_t camio_istream_udp_ready(camio_istream_t* this){
     camio_istream_udp_t* priv = this->priv;
     if(priv->bytes_read || priv->is_closed){
         return 1;
@@ -151,7 +151,7 @@ int camio_istream_udp_ready(camio_istream_t* this){
 }
 
 
-static int camio_istream_udp_start_read(camio_istream_t* this, uint8_t** out){
+static int64_t camio_istream_udp_start_read(camio_istream_t* this, uint8_t** out){
     *out = NULL;
 
     camio_istream_udp_t* priv = this->priv;
@@ -174,7 +174,7 @@ static int camio_istream_udp_start_read(camio_istream_t* this, uint8_t** out){
 }
 
 
-int camio_istream_udp_end_read(camio_istream_t* this, uint8_t* free_buff){
+int64_t camio_istream_udp_end_read(camio_istream_t* this, uint8_t* free_buff){
     return 0; //Always true for socket I/O
 }
 

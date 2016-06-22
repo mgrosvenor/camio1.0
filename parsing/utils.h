@@ -18,11 +18,11 @@
 
 #include "utils.h"
 
-inline int isodigit(char c);
-inline int isbdigit(char c);
-inline uint8_t getxdigit(char c);
-int inline iswhite(char c);
-int inline isnwhite(char c);
+int isodigit(char c);
+int isbdigit(char c);
+uint8_t getxdigit(char c);
+int iswhite(char c);
+int isnwhite(char c);
 
 
 #endif /* UTILS_H_ */
