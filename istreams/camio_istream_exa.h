@@ -36,7 +36,6 @@ typedef struct {
 
     char exa_data[DATA_BUFF];
     size_t data_size;
-    int64_t data_timestamp;
 
     camio_istream_t istream;
     camio_istream_exa_params_t* params;  //Parameters passed in from the outside

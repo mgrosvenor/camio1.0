@@ -50,7 +50,7 @@ int64_t camio_istream_exa_open(camio_istream_t* this, const camio_descr_t* descr
     for(int i = 0; i < EXANIC_PORTS; i++){
         priv->exanic_rx[i] = exanic_acquire_rx_buffer(priv->exanic,  i, 0);
         if(unlikely(priv->exanic_rx[i] == NULL)){
-            wprintf(CAMIO_ERR_FILE_OPEN, "Could not attach to exa stream \"%lu\". Error=%s\n",i, strerror(errno));
+            wprintf(CAMIO_ERR_FILE_OPEN, "Warning Could not attach to port \"%lu\". Error=%s\n",i, strerror(errno));
         }
     }
 
@@ -64,7 +64,9 @@ void camio_istream_exa_close(camio_istream_t* this){
     camio_istream_exa_t* priv = this->priv;
 
     for(int i = 0; i < EXANIC_PORTS;i++){
-        exanic_release_rx_buffer(priv->exanic_rx[i]);
+        if(priv->exanic_rx[i]){
+            exanic_release_rx_buffer(priv->exanic_rx[i]);
+        }
     }
 
     exanic_release_handle(priv->exanic);
@@ -87,15 +89,20 @@ static int64_t prepare_next(camio_istream_t* this){
     for(int i = 0; i < EXANIC_PORTS; i++){
         const int p = (priv->port + i) % EXANIC_PORTS;
 
-//        >0 The length of the frame acquired
-//        0 No frame currently available
-//        -EXANIC_RX_FRAME_ABORTED Frame aborted by sender
-//        -EXANIC_RX_FRAME_CORRUPT Frame failed hardware CRC check
-//        -EXANIC_RX_FRAME_HWOVFL Frame lost due to hardware overflow
-//        (e.g. insufficient PCIe/memory bandwidth)
-//        -EXANIC_RX_FRAME_SWOVFL Frame lost due to software overflow
-//        (e.g. scheduling issue)
-//        -EXANIC_RX_FRAME_TRUNCATED Supplied buffer was too short
+        if(priv->exanic_rx[p] == NULL){
+            continue;
+        }
+
+
+//      >0 The length of the frame acquired
+//      0 No frame currently available
+//      -EXANIC_RX_FRAME_ABORTED Frame aborted by sender
+//      -EXANIC_RX_FRAME_CORRUPT Frame failed hardware CRC check
+//      -EXANIC_RX_FRAME_HWOVFL Frame lost due to hardware overflow
+//      (e.g. insufficient PCIe/memory bandwidth)
+//      -EXANIC_RX_FRAME_SWOVFL Frame lost due to software overflow
+//      (e.g. scheduling issue)
+//      -EXANIC_RX_FRAME_TRUNCATED Supplied buffer was too short
 
         uint32_t timestamp_lo = 0;
         dag_record_t* erf = (dag_record_t*)&priv->exa_data[0];
@@ -105,23 +112,19 @@ static int64_t prepare_next(camio_istream_t* this){
 
         ssize_t result = exanic_receive_frame(priv->exanic_rx[p], ether_head, DATA_BUFF- ether_head_offset,  &timestamp_lo);
         if(result > 0){
-            priv->data_timestamp = exanic_timestamp_to_counter(priv->exanic, timestamp_lo);
+            const uint64_t timestamp = exanic_timestamp_to_counter(priv->exanic, timestamp_lo);
+            erf->ts    = timestamp; //HACK! Note this shoudld be in fixed point format..
+            erf->type  = 0; //Hack? Maybe should have something here?
+            erf->flags.iface = p; //Low bits are the port number
+            erf->flags.reserved = 1; //Tell the reciever this is an unusual timestamp
+            erf->rlen  = ether_head_offset +  result;
+            erf->lctr  = 0;
+            erf->wlen  = htons((uint16_t)result);
+
+            priv->port = p;
+            priv->data_size = result;
+            return priv->data_size;
         }
-
-        erf->ts    = priv->data_timestamp; //HACK! Note this shoudld be in fixed point format..
-        erf->type  = 0; //Hack? Maybe should have something here?
-        erf->flags.iface = p; //Low bits are the port number
-        erf->flags.reserved = 1; //Tell the reciever this is an unusual timestamp
-        erf->rlen  = ether_head_offset +  result;
-        erf->lctr  = 0;
-        erf->wlen  = htons((uint16_t)result);
-
-        priv->port = p;
-        priv->data_size = result;
-        return priv->data_size;
-
-
-
     }
 
     return 0;
@@ -188,6 +191,10 @@ camio_istream_t* camio_istream_exa_construct(camio_istream_exa_t* priv, const ca
     priv->exanic            = NULL;
     priv->data_size			= 0;
     priv->params            = params;
+    priv->exanic_rx[0]      = NULL;
+    priv->exanic_rx[1]      = NULL;
+    priv->exanic_rx[2]      = NULL;
+    priv->exanic_rx[3]      = NULL;
 
     //Populate the function members
     priv->istream.priv          = priv; //Lets us access private members
