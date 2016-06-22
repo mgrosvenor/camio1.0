@@ -24,6 +24,8 @@
 #include "camio_istream_dag.h"
 //#endif //HAVE_DAG_
 
+
+#include "camio_istream_exa.h"
 camio_istream_t* camio_istream_new(const char* description, void* parameters){
     camio_istream_t* result = NULL;
     camio_descr_t descr;
@@ -62,6 +64,9 @@ camio_istream_t* camio_istream_new(const char* description, void* parameters){
 //#ifdef HAVE_DAG_
     else if(strcmp(descr.protocol,"dag") == 0 ){
         result = camio_istream_dag_new(&descr,parameters);
+    }
+    else if(strcmp(descr.protocol,"exa") == 0 ){
+        result = camio_istream_exa_new(&descr,parameters);
     }
     else if(strcmp(descr.protocol,"nmap") == 0 ){
         result = camio_istream_netmap_new(&descr,parameters);

@@ -16,6 +16,7 @@ struct camio_istream;
 typedef struct camio_istream camio_istream_t;
 
 struct camio_istream{
+
      int64_t (*open)(camio_istream_t* this, const camio_descr_t* desc ); //Open the stream and prepare for reading, return 0 if it succeeds
      void(*close)(camio_istream_t* this);                         //Close the stream
      int64_t (*ready)(camio_istream_t* this);                         //Returns non-zero if a call to start_read will be non-blocking
