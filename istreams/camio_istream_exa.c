@@ -17,6 +17,15 @@
 #include <netinet/in.h>
 #include <exanic/exanic.h>
 #include <exanic/time.h>
+#include <net/if.h>
+#include <exanic/exanic.h>
+#include <exanic/config.h>
+#include <exanic/port.h>
+#include <exanic/fifo_rx.h>
+#include <exanic/time.h>
+#include <exanic/filter.h>
+#include <sys/ioctl.h>
+
 
 #include "camio_istream_exa.h"
 #include "../camio_errors.h"
@@ -27,6 +36,30 @@
 
 
 #define EXANIC_PORTS 4 //HACK! Assumes ExaNIC x4
+
+static void set_promiscuous_mode(exanic_t *exanic, int port_number, int enable)
+{
+    struct ifreq ifr;
+    int fd;
+
+    memset(&ifr, 0, sizeof(ifr));
+    if (exanic_get_interface_name(exanic, port_number, ifr.ifr_name,
+            sizeof(ifr.ifr_name)) == -1)
+        return;
+
+    fd = socket(AF_INET, SOCK_DGRAM, 0);
+    if (ioctl(fd, SIOCGIFFLAGS, &ifr) != -1)
+    {
+        if (enable)
+            ifr.ifr_flags |= IFF_PROMISC;
+        else
+            ifr.ifr_flags &= ~IFF_PROMISC;
+
+        ioctl(fd, SIOCSIFFLAGS, &ifr);
+    }
+    close(fd);
+}
+
 
 int64_t camio_istream_exa_open(camio_istream_t* this, const camio_descr_t* descr ){
     camio_istream_exa_t* priv = this->priv;
@@ -51,7 +84,10 @@ int64_t camio_istream_exa_open(camio_istream_t* this, const camio_descr_t* descr
         priv->exanic_rx[i] = exanic_acquire_rx_buffer(priv->exanic,  i, 0);
         if(unlikely(priv->exanic_rx[i] == NULL)){
             wprintf(CAMIO_ERR_FILE_OPEN, "Warning Could not attach to port \"%lu\". Error=%s\n",i, strerror(errno));
+            continue;
         }
+
+        set_promiscuous_mode(priv->exanic,i,1);
     }
 
     this->fd = exa_fd;
@@ -66,6 +102,7 @@ void camio_istream_exa_close(camio_istream_t* this){
     for(int i = 0; i < EXANIC_PORTS;i++){
         if(priv->exanic_rx[i]){
             exanic_release_rx_buffer(priv->exanic_rx[i]);
+            set_promiscuous_mode(priv->exanic,i,0);
         }
     }
 
@@ -94,6 +131,7 @@ static int64_t prepare_next(camio_istream_t* this){
         }
 
 
+
 //      >0 The length of the frame acquired
 //      0 No frame currently available
 //      -EXANIC_RX_FRAME_ABORTED Frame aborted by sender
@@ -117,14 +155,16 @@ static int64_t prepare_next(camio_istream_t* this){
             erf->type  = 0; //Hack? Maybe should have something here?
             erf->flags.iface = p; //Low bits are the port number
             erf->flags.reserved = 1; //Tell the reciever this is an unusual timestamp
-            erf->rlen  = ether_head_offset +  result;
+            erf->rlen  = htons(ether_head_offset +  result);
             erf->lctr  = 0;
             erf->wlen  = htons((uint16_t)result);
 
-            priv->port = p;
+            priv->port = p + 1;
             priv->data_size = result;
+            //printf("Got data of size =%li on port =%i\n",priv->data_size,p);
             return priv->data_size;
         }
+
     }
 
     return 0;
