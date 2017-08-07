@@ -32,7 +32,7 @@
 #include "../camio_util.h"
 #include "../clocks/camio_time.h"
 
-#include "camio/dag/dagapi.h"
+#include "../dag/dagapi.h"
 
 
 #define EXANIC_PORTS 4 //HACK! Assumes ExaNIC x4
@@ -261,6 +261,3 @@ camio_istream_t* camio_istream_exa_new( const camio_descr_t* descr,  camio_istre
     }
     return camio_istream_exa_construct(priv, descr,  params);
 }
-
-
-
