@@ -186,7 +186,7 @@ typedef struct sheep {
 	int             dagiom;         /* IOM file descriptor, cannot be 0  */
 	stream_t        stream[DAG_STREAM_MAX]; /* Stream properties         */
 	uint8_t         *iom;           /* IO memory pointer                 */
-	daginf_t        daginf;
+	daginf_t        daginf;         /* Structure for DAG information     */
 	uint32_t        brokencuraddr;  /* fix for ECMs and Dag4.1s          */
 	uint32_t        byteswap;       /* endianness for 3.4/3.51ecm        */
 	dag_reg_t       regs[DAG_REG_MAX_ENTRIES]; /* register enum cache    */
@@ -327,13 +327,6 @@ dag_open(char *dagname)
 		goto fail;
 	}
 
-	/* Get info, we need to get the iom_size */
-	if(ioctl(dagfd, DAGIOCINFO, &herd[dagfd].daginf) < 0)
-	{
-		fprintf(stderr, "[dag_open] ioctl DAGIOCINFO: fail\n");
-		/* ioctl() sets errno. */
-		goto fail;
-	}
 #if 0 	
 	fprintf(stderr, "[dag_open] mmap fail\n");
 #endif 	
@@ -579,6 +572,29 @@ dag_info(int dagfd)
 	if(!herd[dagfd].opened) {
 		errno = EBADF;
 		return NULL;
+	}
+
+	if(!herd[dagfd].daginf.up_to_date) {
+		dag_card_inf_t dagcardinf;
+		if(ioctl(dagfd, DAGIOCINFO, &dagcardinf) < 0) {
+			/* ioctl() sets errno. */
+			return NULL;
+		}
+		herd[dagfd].daginf.id = dagcardinf.id;
+		herd[dagfd].daginf.iom_size = dagcardinf.iom_size;
+		herd[dagfd].daginf.device_code = dagcardinf.device_code;
+		herd[dagfd].daginf.brd_rev = dagcardinf.brd_rev;
+		memcpy(herd[dagfd].daginf.bus_id, dagcardinf.bus_id, DAG_ID_SIZE);
+
+		dag_memreq_t dag_memreq = {0, 0, 0, 0, 0};
+		if(ioctl(dagfd, DAGIOCSTREAMGETINFO, &dag_memreq) < 0) {
+			/* ioctl() sets errno. */
+			return NULL;
+		}
+		herd[dagfd].daginf.phy_addr = dag_memreq.base;
+		herd[dagfd].daginf.phy_addr_h = dag_memreq.base >> 32;
+
+		herd[dagfd].daginf.up_to_date = 1;
 	}
 
 	return &herd[dagfd].daginf;
@@ -2191,8 +2207,7 @@ dag_attach_stream_protection(int dagfd, int stream_num, uint32_t flags, uint32_t
 	dag_reg_t result[DAG_REG_MAX_ENTRIES];
 	uint32_t regn=0;
 	int  lock;
-	uint64_t physaddr;
-	uint32_t offset;    // offset in phy addr to present mem hole
+	uint64_t offset;    // offset in phy addr to present mem hole
 	dagpbm_MkI_t * pbm_MkI = 0;
 	dagpbm_stream_MkII_t * pbm_MkII = 0;
 	dagpbm_stream_MkIII_t * pbm_MkIII = 0;
@@ -2336,10 +2351,8 @@ dag_attach_stream_protection(int dagfd, int stream_num, uint32_t flags, uint32_t
 #if defined(__linux__) 
 			/* An IOCTL to get full 64bit physical address */
 			/* Generic daginf_t can return only 32bit value */
-			if (ioctl(dagfd, DAGIOCPHYADDR, &physaddr) == 0) {
-				pbm_MkIII->mem_addr_h = physaddr >> 32;
-				pbm_MkIII->limit_ptr_h = physaddr >> 32;
-			}
+			pbm_MkIII->mem_addr_h = dag_info(dagfd)->phy_addr_h;
+			pbm_MkIII->limit_ptr_h = dag_info(dagfd)->phy_addr_h;
 #endif
 			// Bind the structure to the stream
 			herd[dagfd].stream[stream_num].pbm = pbm;
@@ -3765,7 +3778,8 @@ dag_update(int dagfd)
 
 #elif defined(__sun) || defined(__linux__) || defined(__FreeBSD__) || (defined(__APPLE__) && defined(__ppc__))
 
-	if(ioctl(dagfd, DAGIOCINFO, &herd[dagfd].daginf) < 0)
+	herd[dagfd].daginf.up_to_date = 0;
+	if(dag_info(dagfd) == NULL)
 		return -1;
 
 #endif /* Platform-specific code. */
