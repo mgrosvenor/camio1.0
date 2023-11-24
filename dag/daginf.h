@@ -73,6 +73,7 @@
 #define DAG_ID_SIZE 20 /* for daginf.bus_id, from BUS_ID_SIZE = KOBJ_NAME_LEN */
 typedef struct daginf {
 	uint32_t		id;		/* DAG device number */
+	int 			up_to_date;  /* 1 if up to date, 0 if not */
 
 	uint32_t		phy_addr ;
 //	unsigned long		phy_addr;	/* PCI address of large buffer (ptr) */
@@ -83,6 +84,7 @@ typedef struct daginf {
 #if defined(__linux__) || defined(__FreeBSD__) || (defined (__SVR4) && defined (__sun))
 	char			bus_id[DAG_ID_SIZE];
 	uint8_t 		brd_rev;	/**Card revision ID which is stored in the PCI configuration space */
+	uint32_t 		phy_addr_h; /**Upper 32 bits of the physical address of the large buffer */
 #endif
 #if defined(_WIN32)
 	uint32_t		bus_num;	/* PCI bus number */
@@ -92,6 +94,26 @@ typedef struct daginf {
 	uint16_t 		brd_rev;	/**Card revision ID which is stored in the PCI configuration space */
 #endif
 } daginf_t;
+
+/**
+ * New ioctl structures for DAG driver 5.7.1
+*/
+typedef struct dag_card_inf {
+        uint32_t                id;                     /* DAG device number 0 to DAG_MAX_BOARDS*/
+        uint32_t                flags;                  /* Flags */
+        uint32_t                iom_size;               /* iom size */
+        uint16_t                device_code;            /* PCI device ID */
+        uint8_t                 brd_rev;                /* Card rev ID from PCI conf space */
+        char                    bus_id[DAG_ID_SIZE];    /* PCI bus ID string */
+        int8_t                  bus_node;               /* PCI bus NUMA node */
+        char                    reserved[28];           /* reserved for future needs */
+} dag_card_inf_t;
+
+typedef enum duck_sync_method
+{
+	DUCK_PPS  = 0,
+	DUCK_PTP  = 1
+} duck_sync_method_t;
 
 /* Bitfields for DAG_IOSETDUCK, Set_Duck_Field parameter */
 /* Processing order is impled numerically ascending */
@@ -118,6 +140,7 @@ typedef struct duckinf
 	uint32_t	Health, Sickness;
 	int32_t		Freq_Err, Phase_Err;
 	uint32_t	Set_Duck_Field;
+	duck_sync_method_t Sync_Method; 
 } duckinf_t;
 
 

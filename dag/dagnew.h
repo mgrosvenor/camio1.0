@@ -175,6 +175,16 @@ typedef struct dag_meminfo
     uint32_t nid_pages[DAG_MAX_NODES];
 } dag_meminfo_t;
 
+
+typedef struct dag_memreq
+{
+	uint64_t base; /* This is a DMA address, not physical.*/
+	uint64_t size;
+	uint32_t stream;
+	uint32_t node;
+	uint32_t flags;
+}dag_memreq_t;
+
 /*
  * Dag iocontrols
  */
@@ -196,16 +206,19 @@ typedef struct dag_meminfo
 #else
 
 #define DAG_IOC_MAGIC  'd'
+/* Old ioctl commands, not yet updated */
 #define DAGIOCRESET    _IOW(DAG_IOC_MAGIC,  0, uint32_t)
 #define DAGIOCMONITOR  _IOWR(DAG_IOC_MAGIC, 1, monparams_t)
-#define DAGIOCINFO     _IOR(DAG_IOC_MAGIC,  2, daginf_t)
-#define DAGIOCLOCK     _IOWR(DAG_IOC_MAGIC, 3, int)
-#define DAGIOCDUCK     _IOWR(DAG_IOC_MAGIC, 4, duckinf_t)
-#define DAGIOCPHYADDR  _IOR(DAG_IOC_MAGIC, 5, uint64_t)
 #define DAGIOCIRQTIME  _IOR(DAG_IOC_MAGIC, 6, duck_irq_time_t)
 #define DAGIOCDEVNID  _IOR(DAG_IOC_MAGIC, 7, uint32_t)
 #define DAGIOCMEMINFO  _IOR(DAG_IOC_MAGIC, 8, dag_meminfo_t)
 #define DAGIOCSETMEM  _IOWR(DAG_IOC_MAGIC, 9, user_mem_t)
+
+/* Updated ioctl commands */
+#define DAGIOCINFO     _IOR(DAG_IOC_MAGIC,  3, dag_card_inf_t)
+#define DAGIOCLOCK     _IOW(DAG_IOC_MAGIC, 5, int)
+#define DAGIOCDUCK     _IOWR(DAG_IOC_MAGIC, 1, duckinf_t)
+#define DAGIOCSTREAMGETINFO _IOWR(DAG_IOC_MAGIC, 9, dag_memreq_t)
 
 #endif /* Solaris */
 
